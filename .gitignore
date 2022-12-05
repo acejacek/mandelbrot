@@ -1,0 +1,8 @@
+*.o
+*.swp
+*.ppm
+*.html
+*.png
+.DS_Store
+*.dSYM
+mandelbrot

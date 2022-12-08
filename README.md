@@ -21,3 +21,7 @@ Program generates Mandelbrot fractal, saved as `mandelbrot.ppm` file in [PPM](ht
 ```bash
 xdg-open mandelbrot.ppm
 ```
+## Example
+
+![Example](./mandelbrot.png)
+

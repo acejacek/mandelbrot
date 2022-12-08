@@ -9,6 +9,9 @@ all: exec
 debug: CFLAGS += -DDEBUG -g
 debug: exec
 
+run:	exec
+	./${OUTPUT}
+
 exec: main.c
 	cc ${CFLAGS} -o ${OUTPUT} main.c ${LFLAGS}
 

@@ -13,7 +13,7 @@
 #define X_MAX_RANGE 1.2f
 #define Y_MIN_RANGE -1.2f
 #define Y_MAX_RANGE 1.2f
-#define MAX_ITERATIONS 300
+#define MAX_ITERATIONS 50
 #define FILENAME "mandelbrot.ppm"
 
 typedef struct Pixel {
@@ -33,6 +33,50 @@ static inline float fmap(long x, long in_min, long in_max, float out_min, float 
 static inline long map(long x, long in_min, long in_max, long out_min, long out_max)
 {
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+Pixel hsv2rgb(uint8_t h, uint8_t s, uint8_t v)
+{
+    Pixel rgb;
+
+    if (s == 0)
+    {
+        rgb.r = v;
+        rgb.g = v;
+        rgb.b = v;
+        return rgb;
+    }
+
+    uint8_t region = h / 43;
+    uint8_t remainder = (h - (region * 43)) * 6;
+
+    uint8_t p = (v * (255 - s)) >> 8;
+    uint8_t q = (v * (255 - ((s * remainder) >> 8))) >> 8;
+    uint8_t t = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8;
+
+    switch (region)
+    {
+        case 0:
+            rgb.r = v; rgb.g = t; rgb.b = p;
+            break;
+        case 1:
+            rgb.r = q; rgb.g = v; rgb.b = p;
+            break;
+        case 2:
+            rgb.r = p; rgb.g = v; rgb.b = t;
+            break;
+        case 3:
+            rgb.r = p; rgb.g = q; rgb.b = v;
+            break;
+        case 4:
+            rgb.r = t; rgb.g = p; rgb.b = v;
+            break;
+        default:
+            rgb.r = v; rgb.g = p; rgb.b = q;
+            break;
+    }
+
+    return rgb;
 }
 
 void render(void)
@@ -58,12 +102,17 @@ void render(void)
                 if (a + b > 16) break;
             }
 
-            uint8_t gray = 0;
+            uint8_t h = 0;
+            uint8_t s = 0;
+            uint8_t v = 0;
 
-            if (n < MAX_ITERATIONS)
-                gray = (uint8_t) map(n, 0, MAX_ITERATIONS, 0, 255);
+            if (n < MAX_ITERATIONS) {
+                h = (uint8_t) map(n, 0, MAX_ITERATIONS, 0, 255);
+                s = (uint8_t) map(n, 0, MAX_ITERATIONS, 255, 0);
+                v = (uint8_t) map(n, 0, MAX_ITERATIONS, 100, 250);
+            }
 
-            Pixel draw = (Pixel) {gray, gray, gray};
+            Pixel draw = hsv2rgb(h, s, v);
 
             screen[y * SCREEN_WIDTH + x] = draw;
         }
@@ -89,8 +138,8 @@ Errno saveToFile()
     return result;
 }
 
-int main(void) {
-
+int main(void)
+{
     Errno err = 0;
 
     screen = malloc(sizeof *screen * SCREEN_WIDTH * SCREEN_HEIGHT);
@@ -105,5 +154,4 @@ int main(void) {
     free(screen);
     return err;
 }
-
 

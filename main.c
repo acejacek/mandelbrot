@@ -3,7 +3,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
-#include <math.h>
 
 #define return_defer(value) do { result = (value); goto close_file; } while (0)
 

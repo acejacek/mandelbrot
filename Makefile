@@ -1,7 +1,7 @@
 OUTPUT = mandelbrot
 
 CFLAGS = -Wall -Werror -Wextra -pedantic
-LFLAGS = -lm
+# LFLAGS = -lm
 
 all: CFLAGS += -O2
 all: exec

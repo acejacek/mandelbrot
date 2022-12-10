@@ -16,10 +16,17 @@
 #define MAX_ITERATIONS 50
 #define FILENAME "mandelbrot.ppm"
 
-typedef struct Pixel {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
+typedef union {
+    struct {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+    };
+    struct {
+        uint8_t h;
+        uint8_t s;
+        uint8_t v;
+    };
 } Pixel;
 
 typedef int Errno;
@@ -35,44 +42,44 @@ static inline long map(long x, long in_min, long in_max, long out_min, long out_
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-Pixel hsv2rgb(uint8_t h, uint8_t s, uint8_t v)
+Pixel hsv2rgb(Pixel hsv)
 {
     Pixel rgb;
 
-    if (s == 0)
+    if (hsv.s == 0)
     {
-        rgb.r = v;
-        rgb.g = v;
-        rgb.b = v;
+        rgb.r = hsv.v;
+        rgb.g = hsv.v;
+        rgb.b = hsv.v;
         return rgb;
     }
 
-    uint8_t region = h / 43;
-    uint8_t remainder = (h - (region * 43)) * 6;
+    uint8_t region = hsv.h / 43;
+    uint8_t remainder = (hsv.h - (region * 43)) * 6;
 
-    uint8_t p = (v * (255 - s)) >> 8;
-    uint8_t q = (v * (255 - ((s * remainder) >> 8))) >> 8;
-    uint8_t t = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8;
+    uint8_t p = (hsv.v * (255 - hsv.s)) >> 8;
+    uint8_t q = (hsv.v * (255 - ((hsv.s * remainder) >> 8))) >> 8;
+    uint8_t t = (hsv.v * (255 - ((hsv.s * (255 - remainder)) >> 8))) >> 8;
 
     switch (region)
     {
         case 0:
-            rgb.r = v; rgb.g = t; rgb.b = p;
+            rgb.r = hsv.v; rgb.g = t; rgb.b = p;
             break;
         case 1:
-            rgb.r = q; rgb.g = v; rgb.b = p;
+            rgb.r = q; rgb.g = hsv.v; rgb.b = p;
             break;
         case 2:
-            rgb.r = p; rgb.g = v; rgb.b = t;
+            rgb.r = p; rgb.g = hsv.v; rgb.b = t;
             break;
         case 3:
-            rgb.r = p; rgb.g = q; rgb.b = v;
+            rgb.r = p; rgb.g = q; rgb.b = hsv.v;
             break;
         case 4:
-            rgb.r = t; rgb.g = p; rgb.b = v;
+            rgb.r = t; rgb.g = p; rgb.b = hsv.v;
             break;
         default:
-            rgb.r = v; rgb.g = p; rgb.b = q;
+            rgb.r = hsv.v; rgb.g = p; rgb.b = q;
             break;
     }
 
@@ -102,17 +109,15 @@ void render(void)
                 if (a + b > 16) break;
             }
 
-            uint8_t h = 0;
-            uint8_t s = 0;
-            uint8_t v = 0;
+            Pixel hsv = { .h = 0, .s = 0, .v = 0 };
 
             if (n < MAX_ITERATIONS) {
-                h = (uint8_t) map(n, 0, MAX_ITERATIONS, 0, 255);
-                s = (uint8_t) map(n, 0, MAX_ITERATIONS, 255, 0);
-                v = (uint8_t) map(n, 0, MAX_ITERATIONS, 100, 250);
+                hsv.h = (uint8_t) map(n, 0, MAX_ITERATIONS, 0, 255);
+                hsv.s = (uint8_t) map(n, 0, MAX_ITERATIONS, 255, 0);
+                hsv.v = (uint8_t) map(n, 0, MAX_ITERATIONS, 100, 250);
             }
 
-            Pixel draw = hsv2rgb(h, s, v);
+            Pixel draw = hsv2rgb(hsv);
 
             screen[y * SCREEN_WIDTH + x] = draw;
         }

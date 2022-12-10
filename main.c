@@ -30,8 +30,6 @@ typedef union {
 
 typedef int Errno;
 
-Pixel* screen;
-
 static inline float fmap(long x, long in_min, long in_max, float out_min, float out_max)
 {
     return (float)(x - in_min) * (out_max - out_min) / (float)(in_max - in_min) + out_min;
@@ -85,10 +83,12 @@ Pixel hsv2rgb(Pixel hsv)
     return rgb;
 }
 
-void render(void)
+void render(Pixel* screen)
 {
-    for (int y = 0; y < SCREEN_HEIGHT; ++y) {
-        for (int x = 0; x < SCREEN_WIDTH; ++x) {
+    for (int y = 0; y < SCREEN_HEIGHT; ++y)
+    {
+        for (int x = 0; x < SCREEN_WIDTH; ++x)
+        {
 
             float a = fmap(x, 0, SCREEN_WIDTH, X_MIN_RANGE, X_MAX_RANGE);
             float b = fmap(y, 0, SCREEN_HEIGHT, Y_MIN_RANGE, Y_MAX_RANGE);
@@ -99,18 +99,19 @@ void render(void)
             int n = 0;
             while (++n < MAX_ITERATIONS)
             {
-                float aa = a * a - b * b;
-                float bb = 2.0f * a * b;
+                float real = a * a - b * b;
+                float imag = 2.0f * a * b;
 
-                a = aa + ca;
-                b = bb + cb;
+                a = real + ca;
+                b = imag + cb;
 
-                if (a + b > 16) break;
+                if (a * a + b * b > 16.0f) break;
             }
 
             Pixel hsv = { .h = 0, .s = 0, .v = 0 };
 
-            if (n < MAX_ITERATIONS) {
+            if (n < MAX_ITERATIONS)
+            {
                 hsv.h = (uint8_t) map(n, 0, MAX_ITERATIONS, 0, 255);
                 hsv.s = (uint8_t) map(n, 0, MAX_ITERATIONS, 255, 0);
                 hsv.v = (uint8_t) map(n, 0, MAX_ITERATIONS, 100, 250);
@@ -123,7 +124,7 @@ void render(void)
     }
 }
 
-Errno saveToFile()
+Errno saveToFile(Pixel* screen)
 {
     Errno result = 0;
     FILE* f = NULL;
@@ -139,6 +140,9 @@ Errno saveToFile()
 
  close_file:
     if (f) fclose(f);
+    if (result)
+        fprintf(stderr, "Error: could not write to file %s: %s\n", FILENAME, strerror(result));
+
     return result;
 }
 
@@ -146,14 +150,12 @@ int main(void)
 {
     Errno err = 0;
 
-    screen = malloc(sizeof *screen * SCREEN_WIDTH * SCREEN_HEIGHT);
+    Pixel* screen = malloc(sizeof *screen * SCREEN_WIDTH * SCREEN_HEIGHT);
     assert(screen);
 
-    render();
+    render(screen);
 
-    err = saveToFile();
-    if (err)
-        fprintf(stderr, "Error: could not write to file %s: %s\n", FILENAME, strerror(err));
+    err = saveToFile(screen);
 
     free(screen);
     return err;
